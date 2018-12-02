@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 const INPUT: &str = include_str!(".\\..\\input.txt");
 
@@ -22,13 +23,13 @@ fn get_changes(input: &str) -> Vec<i32> {
 
 fn star2(input: &str) {
     let changes = get_changes(input);
-    let mut frequency_map: HashMap<i32, bool> = HashMap::new();
+    let mut frequency_set: HashSet<i32> = HashSet::new();
 
     let mut frequency = 0;
     for change in changes.iter().cycle() {
         frequency += change;
 
-        if frequency_map.insert(frequency, true) != None {
+        if !frequency_set.insert(frequency) {
             break;
         }
     }
