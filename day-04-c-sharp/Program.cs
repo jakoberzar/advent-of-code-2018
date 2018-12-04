@@ -39,7 +39,8 @@ namespace Day_04
             Console.WriteLine("Guard is {0}, minute is {1}, product is {2}", guard, minute, guard * minute);
         }
 
-        static string[] getInput(string filename) {
+        static string[] getInput(string filename)
+        {
             return System.IO.File.ReadAllLines(filename).ToArray();
         }
 
@@ -67,7 +68,8 @@ namespace Day_04
             return naps;
         }
 
-        static Dictionary<int, List<Nap>> groupNapsByGuards(List<Nap> naps) {
+        static Dictionary<int, List<Nap>> groupNapsByGuards(List<Nap> naps)
+        {
             return naps
                 .GroupBy(nap => nap.Guard)
                 .ToDictionary(group => group.Key, group => group.ToList());
