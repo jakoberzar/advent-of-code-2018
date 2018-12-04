@@ -1,9 +1,4 @@
-﻿// TODO:
-// - Improve the clearness of the code
-// - Reduce the amount of duplication
-// - Change the architecture of classes used
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
@@ -15,34 +10,29 @@ namespace Day_04
         static void Main(string[] args)
         {
             var lines = getInput("input.txt");
-            List<Watch> watches = parseInput(lines);
-            star1(watches);
-            star2(watches);
+            List<Nap> naps = parseInput(lines);
+            Dictionary<int, List<Nap>> guardsNaps = groupNapsByGuards(naps);
+
+            star1(guardsNaps);
+            star2(guardsNaps);
         }
 
-        static void star1(List<Watch> watches) {
-            var sleepsMost = watches
-                .GroupBy(watch => watch.Guard)
-                .Select(group => {
-                    int sum = 0;
-                    for (int i = 0; i < group.Count(); i += 2) {
-                        sum += group.ElementAt(i + 1).Time.Item2 - group.ElementAt(i).Time.Item2;
-                    }
-                    return (group.Key, sum);
-                }).OrderByDescending(item => item.sum)
+        static void star1(Dictionary<int, List<Nap>> guardsNaps)
+        {
+            int sleepyGuard = guardsNaps
+                .OrderByDescending(entry => entry.Value.Sum(nap => nap.Length))
                 .First()
                 .Key;
 
-            var guardsWatches = watches.Where(watch => watch.Guard == sleepsMost);
-            int minute = getMostSleptMinute(guardsWatches).minute;
+            int minute = getMostSleptMinute(guardsNaps[sleepyGuard]).minute;
 
-            Console.WriteLine("Guard is {0}, minute is {1}, product is {2}", sleepsMost, minute, sleepsMost * minute);
+            Console.WriteLine("Guard is {0}, minute is {1}, product is {2}", sleepyGuard, minute, sleepyGuard * minute);
         }
 
-        static void star2(List<Watch> watches) {
-            var (guard, (minute, amount)) = watches
-                .GroupBy(watch => watch.Guard)
-                .Select(group => (guard: group.Key, frequentMinute: getMostSleptMinute(group)))
+        static void star2(Dictionary<int, List<Nap>> guardsNaps)
+        {
+            var (guard, (minute, amount)) = guardsNaps
+                .Select(group => (guard: group.Key, frequentMinute: getMostSleptMinute(group.Value)))
                 .OrderByDescending(item => item.frequentMinute.amount)
                 .First();
 
@@ -50,44 +40,67 @@ namespace Day_04
         }
 
         static string[] getInput(string filename) {
-            return System.IO.File.ReadAllLines(filename);
+            return System.IO.File.ReadAllLines(filename).ToArray();
         }
 
-        static List<Watch> parseInput(string[] lines) {
+        static List<Nap> parseInput(string[] lines)
+        {
             Array.Sort(lines);
-            var rx = new Regex(@"\[(\d+)-(\d+)-(\d+) (\d+):(\d+)\] (?<action>\w+) #?(?<id>\d+)?");
-            var watches = new List<Watch>();
+            var naps = new List<Nap>();
 
-            int guard = 0;
-            foreach (string line in lines)
+            int? guard = null;
+            for (int i = 0; i < lines.Length; i++)
             {
-                var matches = rx.Matches(line);
-                if (matches.Count == 0) continue;
-                var groups = matches[0].Groups;
-                var date = (Int32.Parse(groups[1].Value), Int32.Parse(groups[2].Value), Int32.Parse(groups[3].Value));
-                var time = (Int32.Parse(groups[4].Value), Int32.Parse(groups[5].Value));
-                string action = groups["action"].Value;
+                var (start, action, id) = parseLine(lines[i]);
 
-                if (action == "Guard") {
-                    guard = Int32.Parse(groups["id"].Value);
+                if (action == "Guard")
+                {
+                    guard = id;
                     continue;
                 }
 
-                watches.Add(new Watch(date, time, guard, action));
+                var (end, _, _) = parseLine(lines[++i]);
+
+                naps.Add(new Nap(start, end, guard ?? 0));
             }
-            return watches;
+
+            return naps;
         }
 
-        static (int minute, int amount) getMostSleptMinute(IEnumerable<Watch> watches) {
-            var sleepCombinations = new List<(Watch, Watch)>();
-            for (int i = 0; i < watches.Count(); i += 2) {
-                sleepCombinations.Add((watches.ElementAt(i), watches.ElementAt(i + 1)));
-            }
+        static Dictionary<int, List<Nap>> groupNapsByGuards(List<Nap> naps) {
+            return naps
+                .GroupBy(nap => nap.Guard)
+                .ToDictionary(group => group.Key, group => group.ToList());
+        }
 
+        static (DateTime date, string action, int? id) parseLine(string line)
+        {
+            var rx = new Regex(@"\[(\d+)-(\d+)-(\d+) (\d+):(\d+)\] (?<action>\w+) #?(?<id>\d+)?");
+            var matches = rx.Matches(line);
+            var groups = matches[0].Groups;
+
+            int[] nums = groups
+                .Skip(1)
+                .Take(5)
+                .Select(group => Int32.Parse(group.Value))
+                .ToArray();
+            DateTime date = new DateTime(nums[0], nums[1], nums[2], nums[3], nums[4], 0);
+
+            string action = groups["action"].Value;
+
+            int id;
+            bool hasId = Int32.TryParse(groups["id"]?.Value, out id);
+
+            return (date, action, hasId ? (int?)id : null);
+        }
+
+        static (int minute, int amount) getMostSleptMinute(IEnumerable<Nap> naps)
+        {
             var sleepMinutes = new int[60];
-            foreach (var (timeFell, timeWoke) in sleepCombinations)
+            foreach (var nap in naps)
             {
-                for (int i = timeFell.Time.Item2; i < timeWoke.Time.Item2; i++) {
+                foreach (var i in nap.getMinuteRange())
+                {
                     sleepMinutes[i] += 1;
                 }
             }
@@ -97,26 +110,27 @@ namespace Day_04
             while (sleepMinutes[minute] != max) minute++;
             return (minute, max);
         }
-
     }
 
-    public enum Action {
-        FallsAsleep,
-        WakesUp
-    }
-
-    class Watch
+    class Nap
     {
-        public (int, int, int) Date;
-        public (int, int) Time;
-        public int Guard;
-        public Action SleepAction;
+        public readonly DateTime Start, End;
+        public readonly int Guard;
+        public int Length
+        {
+            get { return End.Minute - Start.Minute; }
+        }
 
-        public Watch((int, int, int) date, (int, int) time, int guard, string action) {
-            Date = date;
-            Time = time;
+        public Nap(DateTime start, DateTime end, int guard)
+        {
+            Start = start;
+            End = end;
             Guard = guard;
-            SleepAction = action == "falls" ? Action.FallsAsleep : Action.WakesUp;
+        }
+
+        public IEnumerable<int> getMinuteRange()
+        {
+            return Enumerable.Range(Start.Minute, End.Minute - Start.Minute);
         }
     }
 }
