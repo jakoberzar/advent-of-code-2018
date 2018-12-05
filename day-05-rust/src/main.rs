@@ -17,38 +17,29 @@ fn star1(input: &str) {
 fn star2(input: &str) {
     let minified = minify(input);
     let letters = get_letters(&minified);
-    let mut lowest = minified.len();
-    for &letter in letters.iter() {
-        let new_str = remove_letter_from_string(&minified, letter);
+    let lowest = letters.iter().fold(minified.len(), |acc, &x| {
+        let new_str = remove_letter_from_string(&minified, x);
         let minified = minify(&new_str);
-        lowest = cmp::min(lowest, minified.len());
-    }
+        cmp::min(acc, minified.len())
+    });
     println!("The lowest possible is {}", lowest);
 }
 
 fn minify(input: &str) -> String {
-    let mut idx = 0;
-    let mut s = String::from(input);
-    while idx < s.len() - 1 {
-        let (current, next) = get_nth_chars(&s, idx);
-        if current != next && current.to_lowercase().next() == next.to_lowercase().next() {
-            let moved = s;
-            s = String::with_capacity(moved.len());
-            s.push_str(&moved[.. idx]);
-            s.push_str(&moved[idx + 2..]);
-            idx = if idx > 0 { idx - 1 } else { 0 };
-        } else {
-            idx += 1;
+    let mut stack: Vec<char> = Vec::with_capacity(input.len());
+    for c1 in input.chars() {
+        match stack.last() {
+            Some(&c2) => {
+                if c2 != c1 && c2.to_ascii_lowercase() == c1.to_ascii_lowercase() {
+                    stack.pop();
+                } else {
+                    stack.push(c1);
+                }
+            }
+            None => stack.push(c1),
         }
     }
-    s
-}
-
-fn get_nth_chars(s: &str, idx: usize) -> (char, char) {
-    let mut chars = s.chars();
-    let current = chars.nth(idx).expect("Could not get char idx");
-    let next = chars.next().expect("Could not get char idx + 1");
-    (current, next)
+    String::from_iter(stack.into_iter())
 }
 
 fn get_letters(input: &str) -> Vec<char> {
@@ -57,7 +48,6 @@ fn get_letters(input: &str) -> Vec<char> {
         set.insert(x);
     });
     let mut result = Vec::from_iter(set.into_iter());
-    let result = result.as_mut_slice();
     result.sort();
     result.to_vec()
 }
@@ -71,4 +61,29 @@ fn remove_letter_from_string(input: &str, letter_low: char) -> String {
         }
     });
     new_str
+}
+
+fn _old_minify(input: &str) -> String {
+    let mut idx = 0;
+    let mut s = String::from(input);
+    while idx < s.len() - 1 {
+        let (current, next) = _old_get_nth_chars(&s, idx);
+        if current != next && current.to_lowercase().next() == next.to_lowercase().next() {
+            let moved = s;
+            s = String::with_capacity(moved.len());
+            s.push_str(&moved[.. idx]);
+            s.push_str(&moved[idx + 2..]);
+            idx = if idx > 0 { idx - 1 } else { 0 };
+        } else {
+            idx += 1;
+        }
+    }
+    s
+}
+
+fn _old_get_nth_chars(s: &str, idx: usize) -> (char, char) {
+    let mut chars = s.chars();
+    let current = chars.nth(idx).expect("Could not get char idx");
+    let next = chars.next().expect("Could not get char idx + 1");
+    (current, next)
 }
