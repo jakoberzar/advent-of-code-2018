@@ -1,0 +1,6 @@
+[package]
+name = "day-05-rust"
+version = "0.1.0"
+authors = ["Jakob Erzar <jakob.erzar@gmail.com>"]
+
+[dependencies]
