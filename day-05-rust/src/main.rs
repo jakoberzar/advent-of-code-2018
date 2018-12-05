@@ -30,23 +30,25 @@ fn minify(input: &str) -> String {
     let mut idx = 0;
     let mut s = String::from(input);
     while idx < s.len() - 1 {
-        let cloned = s.clone();
-        let mut chars = cloned.chars();
-        let current = chars.nth(idx).expect("Could not get char idx");
-        let next = chars.next().expect("Could not get char idx + 1");
-        // println!("s: {}, current: {}, next: {}, idx: {}", s, current, next, idx);
+        let (current, next) = get_nth_chars(&s, idx);
         if current != next && current.to_lowercase().next() == next.to_lowercase().next() {
-            let bytes = cloned.as_bytes();
-            let mut new_bytes: Vec<u8> = Vec::new();
-            new_bytes.extend_from_slice(&bytes[..idx]);
-            new_bytes.extend_from_slice(&bytes[idx + 2..]);
-            s = String::from_utf8(new_bytes).expect("Bytes are not an ok string");
+            let moved = s;
+            s = String::with_capacity(moved.len());
+            s.push_str(&moved[.. idx]);
+            s.push_str(&moved[idx + 2..]);
             idx = if idx > 0 { idx - 1 } else { 0 };
         } else {
             idx += 1;
         }
     }
     s
+}
+
+fn get_nth_chars(s: &str, idx: usize) -> (char, char) {
+    let mut chars = s.chars();
+    let current = chars.nth(idx).expect("Could not get char idx");
+    let next = chars.next().expect("Could not get char idx + 1");
+    (current, next)
 }
 
 fn get_letters(input: &str) -> Vec<char> {
