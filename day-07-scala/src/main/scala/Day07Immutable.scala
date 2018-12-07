@@ -1,5 +1,4 @@
 import scala.annotation.tailrec
-import scala.collection.mutable
 import scala.io.Source
 
 object Day07Immutable {
@@ -7,9 +6,7 @@ object Day07Immutable {
     val input = Source.fromResource("input.txt").getLines().toList
 
     star1(parseInput(input))
-    // ABDCJLFMNVQWHIRKTEUXOZSYPG
-    // ABDCJLFMNVQWHIRKTEUXOZSYPG
-    star2(parseInput(input)) // 896
+    star2(parseInput(input))
   }
 
   def star1(nodes: List[Node]): Unit = {
@@ -18,8 +15,8 @@ object Day07Immutable {
       case Nil => done.reverse
       case head :: _ =>
         val toProcess = nodes
-          .filter(_.id != head.id)
-          .map(_.withoutRequire(List(head)))
+          .filter(_ != head)
+          .map(_.withoutRequired(List(head)))
         processNodes(toProcess, head :: done)
     }
 
@@ -37,8 +34,7 @@ object Day07Immutable {
           .filter { case (time, _) => time == 1 }
           .map { case (_, task) => task.get }
 
-        val newNodes = nodes
-          .map(_.withoutRequire(tasksJustDone))
+        val newNodes = nodes.map(_.withoutRequired(tasksJustDone))
 
         val newWorkers = workers.map { case (time, task) =>
           if (time == 1) (0, None)
@@ -47,16 +43,16 @@ object Day07Immutable {
         }
 
         val (finalWorkers, finalNodes) = newWorkers.foldLeft(List.empty[(Int, Option[Node])], newNodes) {
-          case ((ws, ns), (time, task)) =>
-            val freeTasks = nextTasks(ns)
+          case ((workers, nodes), (time, task)) =>
+            val freeTasks = nextTasks(nodes)
             val (thisW, newNs) = if (time == 0 && freeTasks != Nil) {
               val head = freeTasks.head
-              val nodesLeft = ns.filter(_.id != head.id)
+              val nodesLeft = nodes.filter(_ != head)
               ((head.getTime, Some(head)), nodesLeft)
             } else {
-              ((time, task), ns)
+              ((time, task), nodes)
             }
-            (thisW :: ws, newNs)
+            (thisW :: workers, newNs)
         }
 
         processNodes(finalNodes, finalWorkers, timeSpent + 1)
@@ -69,13 +65,11 @@ object Day07Immutable {
   }
 
   def parseInput(input: List[String]): List[Node] = {
-    val nodeMap = mutable.HashMap[String, Node]()
-
-    input
+    val nodeMap = input
       .map(parseLine)
-      .flatMap { case (a: String, b: String) => List(a, b) }
+      .flatMap { case (a, b) => List(a, b) }
       .distinct
-      .foreach(x => nodeMap += (x -> Node(x)))
+      .foldLeft(Map.empty[Char, Node])((map, x) => map + (x -> Node(x)))
 
     input
       .map(parseLine)
@@ -86,21 +80,29 @@ object Day07Immutable {
     nodeMap.values.toList
   }
 
-  def parseLine(line: String): (String, String) = (line.charAt(5).toString, line.charAt(36).toString)
+  def parseLine(line: String): (Char, Char) = (line.charAt(5), line.charAt(36))
 
   // Assumes tasks are already alphabetically sorted
   def nextTasks(tasks: List[Node]): List[Node] = tasks.filter(x => x.require.isEmpty)
 
-  case class Node(id: String, var require: List[Node] = Nil) {
+  case class Node(id: Char, var require: List[Node] = Nil) {
+    // This is the only mutation here - it's hard to make a graph of nodes when
+    // they are all immutable... Creating a new node makes other's reference obsolete...
     def addRequisites(node: Node): Unit = {
       require = node :: require
     }
 
-    def getTime: Int = id.charAt(0).toInt - 'A'.toInt + 1 + 60
+    def withoutRequired(others: List[Node]): Node =
+      Node(id, require.filterNot(node => others.contains(node)))
 
-    def withoutRequire(others: List[Node]): Node =
-      Node(id, require.filterNot(node => others.exists(_.id == node.id)))
+    def getTime: Int = id.toInt - 'A'.toInt + 1 + 60
 
     override def toString: String = "Node - " + id
+
+    override def equals(that: Any): Boolean = that match {
+      case Node(id, _) => id == this.id
+      case _ => false
+    }
   }
+
 }
