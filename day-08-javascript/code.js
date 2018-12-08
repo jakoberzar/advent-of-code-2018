@@ -8,15 +8,17 @@ function makeTree(input, startIdx) {
 
     const amountChildren = input[startIdx];
     const amountMetadata = input[startIdx + 1];
+
+    const children = [];
     let metadataIndex = startIdx + 2;
-    let children = [];
     for (let i = 0; i < amountChildren; i++) {
         // Parse the child; get the child and resulting index
-        let childData = makeTree(input, metadataIndex);
+        const childData = makeTree(input, metadataIndex);
         metadataIndex = childData.newIndex;
         children.push(childData.node);
     }
-    let metadata = [];
+
+    const metadata = [];
     for (let i = 0; i < amountMetadata; i++) {
         metadata.push(input[metadataIndex + i]);
     }
