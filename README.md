@@ -1,5 +1,5 @@
 # Advent of Code 2018
-My solutions for Advent of Code 2018. I've tried some langauges that I don't use that often (first time in Kotlin, for example), but I also can't spend too much time on these so some are done in JavaScript only, which I am more familiar with.
+My solutions for Advent of Code 2018. I've tried some langauges that I don't use that often (first time in Kotlin, for example), but I also can't spend too much time on these so some are done in JavaScript / TypeScript only, which I am more familiar with.
 ****
 | Day | Rust | Kotlin | Scala | C#  | JavaScript| TypeScript |
 | --- | ---- | ------ | ----- | --- | --------- | ---------- |
@@ -13,8 +13,8 @@ My solutions for Advent of Code 2018. I've tried some langauges that I don't use
 | 8   |      |        |       |     |     ✔️     |            |
 | 9   |  ✔️   |        |       |     |           |            |
 | 10  |      |        |       |     |     ✔️     |            |
-| 11  |      |        |       |     |    (TS)   |     ✔️      |
-| 12  |      |        |       |     |           |            |
+| 11  |      |        |       |     |(TypeScript)|    ✔️      |
+| 12  |      |        |       |     |(TypeScript)|    ✔️      |
 | 13  |      |        |       |     |           |            |
 | 14  |      |        |       |     |           |            |
 | 15  |      |        |       |     |           |            |
@@ -24,7 +24,7 @@ My solutions for Advent of Code 2018. I've tried some langauges that I don't use
 | 19  |      |        |       |     |           |            |
 | 20  |      |        |       |     |           |            |
 | 21  |      |        |       |     |           |            |
-| 22  |      |        |       |     |           |            |****
+| 22  |      |        |       |     |           |            |
 | 23  |      |        |       |     |           |            |
 | 24  |      |        |       |     |           |            |
 | 25  |      |        |       |     |           |            |
